@@ -4,7 +4,6 @@ use std::process;
 use std::thread;
 use std::thread::JoinHandle;
 use std::sync::mpsc;
-use std::time::Duration;
 use std::sync::mpsc::{Sender, Receiver};
 
 fn main() {
@@ -22,31 +21,20 @@ fn main() {
 	};
 	println!("Generating prime numbers up to {}", limit);
 
-	// boot
-	let (tx, handle) = sieve_start(2);
-	// let handle: JoinHandle<_> = {
-	    
+	// start sieve
+	let handle = {
+		let (tx, handle) = sieve_start(2);
 
-	//     thread::spawn(move || {
-	//         tx.send(p).unwrap();
-	//     })
-	// }
+		for i in 0..limit {
+			let i = i+1;
+			tx.send(i).unwrap();
+		}
 
+		handle
+	};
 
-	// for _ in 0..limit {
-	// 	println!("{:?}", rx.recv().unwrap());
-	// }
-
-	for i in 0..limit {
-		let i = i+1;
-		tx.send(i).unwrap();
-	}
-
-	thread::sleep(Duration::from_millis(100));
-
-	// for h in handles {
- //        h.join().unwrap();
- //    }
+	// wait for completion
+	handle.join().unwrap();
 }
 
 fn sieve_start(divisor: u32) -> (Sender<u32>, JoinHandle<()>) {
