@@ -4,7 +4,8 @@ use std::process;
 use std::thread;
 use std::thread::JoinHandle;
 use std::sync::mpsc;
-
+use std::time::Duration;
+use std::sync::mpsc::{Sender, Receiver};
 
 fn main() {
     // input
@@ -22,21 +23,46 @@ fn main() {
 	println!("Generating prime numbers up to {}", limit);
 
 	// boot
-	let (tx, rx) = mpsc::channel();
-	let handles: Vec<JoinHandle<_>> = (0..limit).map(|p| {
-	    let tx = tx.clone();
+	let (tx, handle) = sieve_start(2);
+	// let handle: JoinHandle<_> = {
+	    
 
-	    thread::spawn(move || {
-	        tx.send(p).unwrap();
-	    })
-	}).collect();
+	//     thread::spawn(move || {
+	//         tx.send(p).unwrap();
+	//     })
+	// }
 
 
-	for _ in 0..limit {
-		println!("{:?}", rx.recv().unwrap());
+	// for _ in 0..limit {
+	// 	println!("{:?}", rx.recv().unwrap());
+	// }
+
+	for i in 0..limit {
+		let i = i+1;
+		tx.send(i).unwrap();
 	}
 
-	for h in handles {
-        h.join().unwrap();
-    }
+	thread::sleep(Duration::from_millis(100));
+
+	// for h in handles {
+ //        h.join().unwrap();
+ //    }
+}
+
+fn sieve_start(divisor: u32) -> (Sender<u32>, JoinHandle<()>) {
+	let (tx, rx) = mpsc::channel();
+
+	let handle = thread::spawn(move || {
+		sieve(divisor, rx);
+	});
+
+	(tx, handle)
+}
+
+fn sieve(divisor: u32, feed: Receiver<u32>) {
+	for inp in feed {
+		if inp % divisor != 0 {
+			println!("{:?}", inp);
+		}
+	}
 }
