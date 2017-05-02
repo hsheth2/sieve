@@ -5,13 +5,13 @@ use std::thread;
 use std::thread::JoinHandle;
 use std::sync::mpsc;
 use std::sync::mpsc::{Sender, Receiver};
-use std::sync::RwLock;
+use std::sync;
 
 #[macro_use]
 extern crate lazy_static;
 
 lazy_static! {
-    static ref LIMIT: RwLock<u32> = RwLock::new(0);
+    static ref LIMIT: sync::RwLock<u32> = sync::RwLock::new(0);
 }
 
 fn main() {
@@ -82,6 +82,18 @@ fn sieve(divisor: u32, feed: Receiver<u32>) {
 	}
 
 	println!("{:?}", next_divisor);
+
+	let limit = *LIMIT.read().unwrap();
+	if next_divisor > (limit as f64).sqrt() as u32 + 1 {
+		// print out rest of feed
+		for value in feed {
+			if value % divisor == 0 && divisor != 1 {
+				continue;
+			}
+			println!("{:?}", value);
+		}
+		return;
+	}
 
 	let handle = {
 		// start next stage
