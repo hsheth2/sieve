@@ -2,9 +2,7 @@ use std::io::prelude::*;
 use std::io;
 use std::process;
 use std::thread;
-use std::thread::JoinHandle;
 use std::sync::mpsc;
-use std::sync::mpsc::{Sender, Receiver};
 use std::sync;
 
 #[macro_use]
@@ -49,7 +47,7 @@ fn main() {
 	handle.join().unwrap();
 }
 
-fn sieve_start(divisor: u32) -> (Sender<u32>, JoinHandle<()>) {
+fn sieve_start(divisor: u32) -> (mpsc::Sender<u32>, thread::JoinHandle<()>) {
 	let (tx, rx) = mpsc::channel();
 
 	let handle = thread::spawn(move || {
@@ -59,7 +57,7 @@ fn sieve_start(divisor: u32) -> (Sender<u32>, JoinHandle<()>) {
 	(tx, handle)
 }
 
-fn sieve(divisor: u32, feed: Receiver<u32>) {
+fn sieve(divisor: u32, feed: mpsc::Receiver<u32>) {
 	// divisor == 0 prints all numbers in feed
 	if divisor == 0 {
 		for value in feed {
