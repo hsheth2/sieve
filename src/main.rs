@@ -1,5 +1,4 @@
-use std::io::prelude::*;
-use std::io;
+use std::io::{self, Write};
 use std::process;
 use std::thread;
 use std::sync::mpsc;
@@ -16,7 +15,7 @@ fn main() {
     // input the limit
     let mut input = String::new();
     print!("Enter the largest number for the sieve > ");
-    io::stdout().flush().ok().expect("flush failed");
+    io::stdout().flush().unwrap();
 	io::stdin().read_line(&mut input).expect("read_line failed");
 	{
 		let mut limit = LIMIT.write().unwrap();
