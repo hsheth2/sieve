@@ -5,27 +5,41 @@ use std::thread;
 use std::thread::JoinHandle;
 use std::sync::mpsc;
 use std::sync::mpsc::{Sender, Receiver};
+use std::sync::RwLock;
+
+#[macro_use]
+extern crate lazy_static;
+
+lazy_static! {
+    static ref LIMIT: RwLock<u32> = RwLock::new(0);
+}
 
 fn main() {
     // input
-    let mut limit = String::new();
+    let mut input = String::new();
     print!("Enter the largest number for the sieve > ");
     io::stdout().flush().ok().expect("flush failed");
-	io::stdin().read_line(&mut limit).expect("read_line failed");
-	let limit: u32 = match limit.trim().parse() {
-		Ok(num) => num,
-		Err(_) => {
-			println!("invalid input");
-			process::exit(1);
-		}
-	};
-	println!("Generating prime numbers up to {}", limit);
+	io::stdin().read_line(&mut input).expect("read_line failed");
+	{
+		let mut limit = LIMIT.write().unwrap();
+		*limit = match input.trim().parse() {
+			Ok(num) => num,
+			Err(_) => {
+				println!("invalid input");
+				process::exit(1);
+			}
+		};
+	}
+
+	// take a read lock so that limit can not be modified
+	let limit = LIMIT.read().unwrap();
+	println!("Generating prime numbers up to {}", *limit);
 
 	// start sieve
 	let (tx, handle) = sieve_start(1);
 	
 	// send in initial values
-	for i in 1..limit {
+	for i in 1..(*limit) {
 		let i = i+1;
 		tx.send(i).unwrap();
 	}
