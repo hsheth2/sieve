@@ -15,7 +15,7 @@ lazy_static! {
 }
 
 fn main() {
-    // input
+    // input the limit
     let mut input = String::new();
     print!("Enter the largest number for the sieve > ");
     io::stdout().flush().ok().expect("flush failed");
@@ -60,6 +60,14 @@ fn sieve_start(divisor: u32) -> (Sender<u32>, JoinHandle<()>) {
 }
 
 fn sieve(divisor: u32, feed: Receiver<u32>) {
+	// divisor == 0 prints all numbers in feed
+	if divisor == 0 {
+		for value in feed {
+			println!("{:?}", value);
+		}
+		return;
+	}
+
 	let mut next_divisor = 0;
 
 	loop {
@@ -85,14 +93,8 @@ fn sieve(divisor: u32, feed: Receiver<u32>) {
 
 	let limit = *LIMIT.read().unwrap();
 	if next_divisor > (limit as f64).sqrt() as u32 + 1 {
-		// print out rest of feed
-		for value in feed {
-			if value % divisor == 0 && divisor != 1 {
-				continue;
-			}
-			println!("{:?}", value);
-		}
-		return;
+		// the next stage should simply output its feed
+		next_divisor = 0;
 	}
 
 	let handle = {
