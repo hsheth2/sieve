@@ -22,16 +22,14 @@ fn main() {
 	println!("Generating prime numbers up to {}", limit);
 
 	// start sieve
-	let handle = {
-		let (tx, handle) = sieve_start(2);
-
-		for i in 0..limit {
-			let i = i+1;
-			tx.send(i).unwrap();
-		}
-
-		handle
-	};
+	let (tx, handle) = sieve_start(1);
+	
+	// send in initial values
+	for i in 1..limit {
+		let i = i+1;
+		tx.send(i).unwrap();
+	}
+	drop(tx);
 
 	// wait for completion
 	handle.join().unwrap();
@@ -48,9 +46,49 @@ fn sieve_start(divisor: u32) -> (Sender<u32>, JoinHandle<()>) {
 }
 
 fn sieve(divisor: u32, feed: Receiver<u32>) {
-	for inp in feed {
-		if inp % divisor != 0 {
-			println!("{:?}", inp);
+	let mut next_divisor = 0;
+
+	loop {
+		let value = match feed.recv() {
+			Ok(v) => v,
+			Err(_) => {
+				// reached limit
+				break;
+			},
+		};
+		
+		if value % divisor != 0 || divisor == 1 {
+			next_divisor = value;
+			break;
 		}
 	}
+
+	if next_divisor == 0 {
+		return;
+	}
+
+	println!("{:?}", next_divisor);
+
+	let handle = {
+		// start next stage
+		let (tx, handle) = sieve_start(next_divisor);
+
+		// finish going through feed
+		for value in feed {
+			if value % divisor == 0 && divisor != 1 {
+				continue;
+			}
+
+			// pass to next stage
+			//println!("Passing {} from divisor {}", value, divisor);
+			tx.send(value).unwrap();
+		}
+
+		drop(tx);
+
+		handle
+	};
+	
+	// wait for sieve to finish
+	handle.join().unwrap();
 }
